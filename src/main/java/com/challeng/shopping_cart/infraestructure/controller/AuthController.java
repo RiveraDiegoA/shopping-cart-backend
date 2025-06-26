@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -27,7 +27,15 @@ public class AuthController {
     public Mono<ResponseEntity<?>> register(@RequestBody User user) {
         user.setRole(Role.ROLE_USER);
         return authService.register(user)
-                .map(saved -> ResponseEntity.ok("Usuario registrado"));
+                .map(userSaved -> {
+                    String token = jwtUtil.generateToken(userSaved);
+                    Map<String, String> response = new HashMap<>();
+                    response.put("token", token);
+                    response.put("role", userSaved.getRole().name());
+                    response.put("username", userSaved.getUsername());
+                    response.put("name", userSaved.getName());
+                    return ResponseEntity.ok(response);
+                });
     }
 
     @PostMapping("/login")

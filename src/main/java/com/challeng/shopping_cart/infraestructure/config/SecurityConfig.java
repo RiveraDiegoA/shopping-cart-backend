@@ -25,9 +25,7 @@ public class SecurityConfig {
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("api/auth/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/products/**").permitAll()
-                        .pathMatchers("/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/auth/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyExchange().authenticated()
                 )
                 .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)

@@ -8,7 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -30,6 +30,7 @@ public class JwtAuthenticationFilter implements WebFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+
             if (jwtUtil.validateToken(token)) {
                 Claims claims = jwtUtil.getClaims(token);
                 String username = claims.getSubject();
@@ -39,13 +40,16 @@ public class JwtAuthenticationFilter implements WebFilter {
                         .map(user -> {
                             List<GrantedAuthority> authorities =
                                     List.of(new SimpleGrantedAuthority("ROLE_" + role));
-                            Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                            Authentication auth =
+                                    new UsernamePasswordAuthenticationToken(username, null, authorities);
                             return auth;
                         })
-                        .doOnNext(SecurityContextHolder.getContext()::setAuthentication)
-                        .then(chain.filter(exchange));
+                        .flatMap(auth -> chain.filter(exchange)
+                                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth)));
             }
         }
+
         return chain.filter(exchange);
     }
 }
+
